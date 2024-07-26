@@ -134,36 +134,36 @@ def optim_solve(y_init, t_span, initial_theta, theta_bounds, y, basis_0, basis_1
         # Pyomo does not support numpy functions in it's constraints
         for n in basis_0['names']: 
             if n[0:3] == 'exp': 
-                basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z: exp(x)
+                basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z,w: exp(x) ###
             elif n[0:3] == 'sin':
-                basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z: sin(x)
+                basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z,w: sin(x) ###
             elif n[0:3] == 'cos':
-                basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z: cos(x)
+                basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z,w: cos(x) ###
                 
         for n in basis_1['names']: 
             if n[0:3] == 'exp': 
-                basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z: exp(y)
+                basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z,w: exp(y) ###
             elif n[0:3] == 'sin':
-                basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z: sin(y)
+                basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z,w: sin(y) ###
             elif n[0:3] == 'cos':
-                basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z: cos(y)
+                basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z,w: cos(y) ###
                 
         for n in basis_2['names']: 
             if n[0:3] == 'exp': 
-                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: exp(z)
+                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z,w: exp(z) ###
             elif n[0:3] == 'sin':
-                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: sin(z)
+                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z,w: sin(z) ###
             elif n[0:3] == 'cos':
-                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: cos(z)
+                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z,w: cos(z) ###
 
 ############################################################################################################
         for n in basis_3['names']: 
             if n[0:3] == 'exp': 
-                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: exp(z)
+                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: exp(w)
             elif n[0:3] == 'sin':
-                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: sin(z)
+                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: sin(w)
             elif n[0:3] == 'cos':
-                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: cos(z)
+                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: cos(w)
 ############################################################################################################
 
             
