@@ -46,8 +46,13 @@ def time_scale_conversion(t, horizon_length, optim_options, time_scale, y_measur
     y_col3 = data_interp(t_col, 
                          [i for i in time_scale if (i >= t) & (i <= t + horizon_length + 1e-2)],
                          [y_measured[i, 2] for i, j in enumerate(time_scale) if (j >= t) & (j <= t + horizon_length + 1e-2)])
+############################################################################################################
+    y_col4 = data_interp(t_col, 
+                         [i for i in time_scale if (i >= t) & (i <= t + horizon_length + 1e-2)],
+                         [y_measured[i, 3] for i, j in enumerate(time_scale) if (j >= t) & (j <= t + horizon_length + 1e-2)])
+############################################################################################################
     
-    y = np.column_stack((y_col1, y_col2, y_col3))
+    y = np.column_stack((y_col1, y_col2, y_col3, y_col4)) ###
     return y, t_col
 
 
@@ -55,8 +60,8 @@ def time_scale_conversion(t, horizon_length, optim_options, time_scale, y_measur
 '''
 Formualates and solves NLP corresponding to one iteration of the MH discovery algorithm 
     Inputs: 
-    - y_init: (vector 2x1) initial conditions for states at the beginning of the time horizon
-    - t_span: (vecotr 2x1) time span for the optimization problem 
+    - y_init: (vector 4x1) initial conditions for states at the beginning of the time horizon ###
+    - t_span: (vecotr 4x1) time span for the optimization problem  ###
     - initial_theta: initial guess for the basis function coefficients (for first iteration these are obtained via OLS)
                      then the parameters from the previous iteration are used 
     - theta_bounds: bounds for the coefficients derived using the confidence intervals in OLS 
@@ -65,7 +70,7 @@ Formualates and solves NLP corresponding to one iteration of the MH discovery al
     - thresholded_indeces: indeces of the coefficients that already been set to zero 
     - optim_options: options for discretization of continuous-time problem into discrete-time 
 '''
-def optim_solve(y_init, t_span, initial_theta, theta_bounds, y, basis_0, basis_1, basis_2, all_features_sym, iter_num, thresholded_indeces, optim_options, sign):
+def optim_solve(y_init, t_span, initial_theta, theta_bounds, y, basis_0, basis_1, basis_2, basis_3, all_features_sym, iter_num, thresholded_indeces, optim_options, sign): ###
     
     print('\n')
     print('--------- MH discovery: Iteration '+str(iter_num)+' ---------\n')
@@ -77,7 +82,7 @@ def optim_solve(y_init, t_span, initial_theta, theta_bounds, y, basis_0, basis_1
     m.t = ContinuousSet(bounds=(t_span[0], t_span[1]))
 
     # Number of state variables
-    m.n = RangeSet(1, 3)
+    m.n = RangeSet(1, 4) ###
 
     # Parameter for regularization
     m.alpha = Param(initialize=0.9)
@@ -145,20 +150,31 @@ def optim_solve(y_init, t_span, initial_theta, theta_bounds, y, basis_0, basis_1
                 
         for n in basis_2['names']: 
             if n[0:3] == 'exp': 
-                basis_1['functions'][basis_2['names'].index(n)] = lambda x,y,z: exp(z)
+                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: exp(z)
             elif n[0:3] == 'sin':
-                basis_1['functions'][basis_2['names'].index(n)] = lambda x,y,z: sin(z)
+                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: sin(z)
             elif n[0:3] == 'cos':
-                basis_1['functions'][basis_2['names'].index(n)] = lambda x,y,z: cos(z)
+                basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: cos(z)
 
+############################################################################################################
+        for n in basis_3['names']: 
+            if n[0:3] == 'exp': 
+                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: exp(z)
+            elif n[0:3] == 'sin':
+                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: sin(z)
+            elif n[0:3] == 'cos':
+                basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: cos(z)
+############################################################################################################
 
             
         if i == 1:
-            return m.dxdt[1, t] == sum(m.theta[i]*fun(m.x[1,t],m.x[2,t],m.x[3,t]) for i, fun in enumerate(basis_0['functions']))
+            return m.dxdt[1, t] == sum(m.theta[i]*fun(m.x[1,t],m.x[2,t],m.x[3,t],m.x[4,t]) for i, fun in enumerate(basis_0['functions'])) ###
         if i == 2:
-            return m.dxdt[2, t] == sum(m.theta[i+len(basis_0['functions'])]*fun(m.x[1,t],m.x[2,t],m.x[3,t]) for i, fun in enumerate(basis_1['functions']))
+            return m.dxdt[2, t] == sum(m.theta[i+len(basis_0['functions'])]*fun(m.x[1,t],m.x[2,t],m.x[3,t],m.x[4,t]) for i, fun in enumerate(basis_1['functions'])) ###
         if i == 3:
-            return m.dxdt[3, t] == sum(m.theta[i+len(basis_0['functions'])+len(basis_1['functions'])]*fun(m.x[1,t],m.x[2,t],m.x[3,t]) for i, fun in enumerate(basis_2['functions']))
+            return m.dxdt[3, t] == sum(m.theta[i+len(basis_0['functions'])+len(basis_1['functions'])]*fun(m.x[1,t],m.x[2,t],m.x[3,t],m.x[4,t]) for i, fun in enumerate(basis_2['functions'])) ###
+        if i == 4:
+            return m.dxdt[4, t] == sum(m.theta[i+len(basis_0['functions'])+len(basis_1['functions'])+len(basis_2['functions'])]*fun(m.x[1,t],m.x[2,t],m.x[3,t],m.x[4,t]) for i, fun in enumerate(basis_3['functions'])) ###
 
     m.diffeq1 = Constraint(m.n, m.t, rule=_diffeq1)
 
@@ -254,7 +270,7 @@ def optim_solve(y_init, t_span, initial_theta, theta_bounds, y, basis_0, basis_1
 
 
 # Simulated dynamics
-def dyn_sim(theta, xs, y, basis_0, basis_1, basis_2):
+def dyn_sim(theta, xs, y, basis_0, basis_1, basis_2, basis_3): ###
     from scipy.integrate import odeint
     
     def dy_dt_sim(y, t):
@@ -292,17 +308,28 @@ def dyn_sim(theta, xs, y, basis_0, basis_1, basis_2):
                 elif n[0:3] == 'cos':
                     basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: np.cos(z)
 
+############################################################################################################
+            for n in basis_3['names']: 
+                if n[0:3] == 'exp': 
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: np.exp(z)
+                elif n[0:3] == 'sin':
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: np.sin(z)
+                elif n[0:3] == 'cos':
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: np.cos(z)
+############################################################################################################
 
             if i == 0:
-                dy_dt_sim[0] = sum(theta[i]*fun(y[0],y[1],y[2]) for i, fun in enumerate(basis_0['functions']))
+                dy_dt_sim[0] = sum(theta[i]*fun(y[0],y[1],y[2],y[3]) for i, fun in enumerate(basis_0['functions'])) ###
             if i == 1:
-                dy_dt_sim[1] = sum(theta[i+len(basis_0['functions'])]*fun(y[0],y[1],y[2]) for i, fun in enumerate(basis_1['functions']))
+                dy_dt_sim[1] = sum(theta[i+len(basis_0['functions'])]*fun(y[0],y[1],y[2],y[3]) for i, fun in enumerate(basis_1['functions'])) ###
             if i == 2:
-                dy_dt_sim[2] = sum(theta[i+len(basis_0['functions']+basis_1['functions'])]*fun(y[0],y[1],y[2]) for i, fun in enumerate(basis_2['functions']))
+                dy_dt_sim[2] = sum(theta[i+len(basis_0['functions']+basis_1['functions'])]*fun(y[0],y[1],y[2],y[3]) for i, fun in enumerate(basis_2['functions'])) ###
+            if i == 3:
+                dy_dt_sim[3] = sum(theta[i+len(basis_0['functions']+basis_1['functions']+basis_2['functions'])]*fun(y[0],y[1],y[2],y[3]) for i, fun in enumerate(basis_3['functions'])) ###
 
         return dy_dt_sim
 
-    ys = odeint(dy_dt_sim, [y[0,0], y[0,1], y[0,2]], xs)
+    ys = odeint(dy_dt_sim, [y[0,0], y[0,1], y[0,2], y[0,3]], xs) ###
     
     return ys
 
@@ -336,7 +363,7 @@ def thresholding_mean_to_std(coeff_num, thresholded_indices, theta_updates, iter
 
                 CV.append(1/abs(np.mean(theta_current)/np.std(theta_current)))
 
-                if i in [0,1,2,21,22,23,42,43,44,63,64,65] and iter_num/iter_thresh < 2: 
+                if i in [0,1,2,21,22,23,42,43,44,63,64,65] and iter_num/iter_thresh < 2: ###????
                     pass
                 elif abs(np.mean(theta_current)/np.std(theta_current)) < tolerance:
                     thresholded_indices.append(i)

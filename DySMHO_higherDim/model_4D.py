@@ -8,14 +8,14 @@ from importlib import reload
 from sklearn import linear_model
 
 
-class threeD_MHL(): 
+class fourD_MHL(): ###
     
     '''
     Initiating class with data:
         Inputs: 
-        - y: N_t by 3 array of noisy state measurements (N_t is the number of measurements)
-        - t: is the times at which the measurements in y were made (arbitrary units)
-        - basis: list of length 3 with disctionaries corresponding to basis functions used for identification of the dynamics
+        - y: N_t by 4 array of noisy state measurements (N_t is the number of measurements) ###
+        - t: is the times at which the measurements in y were made (arbitrary units) ###
+        - basis: list of length 4 with disctionaries corresponding to basis functions used for identification of the dynamics ###
     ''' 
     def __init__(self, y, t, basis):
         self.y = y
@@ -23,6 +23,7 @@ class threeD_MHL():
         self.basis_0 = basis[0]
         self.basis_1 = basis[1]
         self.basis_2 = basis[2]
+        self.basis_3 = basis[3] ###
         
     '''
     Smoothing function applies the Savitzky-Golay filter to the state measurements
@@ -95,7 +96,7 @@ class threeD_MHL():
                 print('No smoothing applied')
                 print('\n')
 
-            y_norm2 = (self.y[:,2]-min(self.y[:,2]))/(max(self.y[:,1])-min(self.y[:,2]))     
+            y_norm2 = (self.y[:,2]-min(self.y[:,2]))/(max(self.y[:,2])-min(self.y[:,2]))     
             std_prev = np.std(diff(y_norm2,1))
             window_size_used = 1 
             std3 = [] 
@@ -120,12 +121,39 @@ class threeD_MHL():
                 print('No smoothing applied')
                 print('\n')
 
-        
+#####################################################################################
+            y_norm3 = (self.y[:,3]-min(self.y[:,3]))/(max(self.y[:,3])-min(self.y[:,3]))     
+            std_prev = np.std(diff(y_norm3,1))
+            window_size_used = 1 
+            std4 = [] 
+            while True:
+                std4.append(std_prev)
+                window_size_used += 10 
+                y_norm3 = savgol_filter(y_norm3, window_size_used, poly_order)
+                std_new = np.std(diff(y_norm3,1))
+                if verbose: 
+                    print('Prev STD: %.5f - New STD: %.5f - Percent change: %.5f' % (std_prev, std_new, 100*(std_new-std_prev)/std_prev))
+                if abs((std_new-std_prev)/std_prev)  < 0.1: 
+                    window_size_used -= 10
+                    break   
+                else:
+                    std_prev = std_new
+                    y_norm3 = (self.y[:,3]-min(self.y[:,3]))/(max(self.y[:,3])-min(self.y[:,3])) 
+                         
+            if window_size_used > 1: 
+                print('Smoothing window size (dimension 4): '+str(window_size_used),'\n')
+                self.y[:,3] = savgol_filter(self.y[:,3], window_size_used, poly_order)
+            else: 
+                print('No smoothing applied')
+                print('\n')
+#####################################################################################
+
         # Pre-specified window size
         else: 
             self.y[:,0] = savgol_filter(self.y[:,0], window_size, poly_order)
             self.y[:,1] = savgol_filter(self.y[:,1], window_size, poly_order)
             self.y[:,2] = savgol_filter(self.y[:,2], window_size, poly_order)
+            self.y[:,3] = savgol_filter(self.y[:,3], window_size, poly_order) ###
             
             self.t = self.t[:len(self.y)]
             
@@ -145,7 +173,8 @@ class threeD_MHL():
         dy_dt1= (self.y[2:,0] - self.y[0:-2,0])/(self.t[2:] - self.t[:-2])
         dy_dt2= (self.y[2:,1] - self.y[0:-2,1])/(self.t[2:] - self.t[:-2])
         dy_dt3= (self.y[2:,2] - self.y[0:-2,2])/(self.t[2:] - self.t[:-2])
-        dydt = np.column_stack((dy_dt1, dy_dt2, dy_dt3))
+        dy_dt4= (self.y[2:,3] - self.y[0:-2,3])/(self.t[2:] - self.t[:-2]) ###
+        dydt = np.column_stack((dy_dt1, dy_dt2, dy_dt3, dy_dt4)) ###
         self.t_diff = self.t[:-1]
        
         
@@ -153,7 +182,7 @@ class threeD_MHL():
         # Generating features in pandas dataframe 
         df_y1 = pd.DataFrame() 
         for i, basis_fun_i in enumerate(self.basis_0['functions']): 
-            df_y1[self.basis_0['names'][i]] = [basis_fun_i(j[0],j[1],j[2]) for j in self.y[1:-1]]
+            df_y1[self.basis_0['names'][i]] = [basis_fun_i(j[0],j[1],j[2],j[3]) for j in self.y[1:-1]] ###
             
         df_y1['dy_dt'] = (self.y[2:,0] - self.y[0:-2,0])/(self.t[2:] - self.t[:-2])
         df_y1.drop(df_y1.tail(1).index,inplace=True)
@@ -168,7 +197,7 @@ class threeD_MHL():
         # Second state
         df_y2 = pd.DataFrame() 
         for i, basis_fun_i in enumerate(self.basis_1['functions']): 
-            df_y2[self.basis_1['names'][i]] = [basis_fun_i(j[0],j[1],j[2]) for j in self.y[1:-1]]
+            df_y2[self.basis_1['names'][i]] = [basis_fun_i(j[0],j[1],j[2],j[3]) for j in self.y[1:-1]] ###
             
         df_y2['dy_dt'] = (self.y[2:,1] - self.y[0:-2,1])/(self.t[2:] - self.t[:-2])
         df_y2.drop(df_y2.tail(1).index,inplace=True)
@@ -183,7 +212,7 @@ class threeD_MHL():
         # Third state
         df_y3 = pd.DataFrame() 
         for i, basis_fun_i in enumerate(self.basis_2['functions']): 
-            df_y3[self.basis_2['names'][i]] = [basis_fun_i(j[0],j[1],j[2]) for j in self.y[1:-1]]
+            df_y3[self.basis_2['names'][i]] = [basis_fun_i(j[0],j[1],j[2],j[3]) for j in self.y[1:-1]] ###
             
         df_y3['dy_dt'] = (self.y[2:,2] - self.y[0:-2,2])/(self.t[2:] - self.t[:-2])
         df_y3.drop(df_y3.tail(1).index,inplace=True)
@@ -192,10 +221,26 @@ class threeD_MHL():
         self.dy3_dt = (self.y[2:,2] - self.y[0:-2,2])/(self.t[2:] - self.t[:-2])
         
         self.all_features_y3 = df_y3.columns
+
+#####################################################################################
+        # Fourth state
+        df_y4 = pd.DataFrame() 
+        for i, basis_fun_i in enumerate(self.basis_3['functions']): 
+            df_y4[self.basis_3['names'][i]] = [basis_fun_i(j[0],j[1],j[2],j[3]) for j in self.y[1:-1]]
+            
+        df_y4['dy_dt'] = (self.y[2:,3] - self.y[0:-2,3])/(self.t[2:] - self.t[:-2])
+        df_y4.drop(df_y4.tail(1).index,inplace=True)
+        df_y4['y_shift'] = self.y[2:-1,3]
+        self.df_y4 = df_y4
+        self.dy4_dt = (self.y[2:,3] - self.y[0:-2,3])/(self.t[2:] - self.t[:-2])
         
+        self.all_features_y4 = df_y4.columns
+#####################################################################################
+
         self.columns_to_keep1 = []
         self.columns_to_keep2 = []
         self.columns_to_keep3 = []
+        self.columns_to_keep4 = [] ###
         
         if '1' in self.df_y1.columns: 
             self.columns_to_keep1.append('1')
@@ -203,10 +248,13 @@ class threeD_MHL():
             self.columns_to_keep2.append('1')
         if '1' in self.df_y3.columns: 
             self.columns_to_keep3.append('1')
+        if '1' in self.df_y4.columns: ###
+            self.columns_to_keep4.append('1') ###
         
         self.dy1_dt = df_y1['dy_dt']
         self.dy2_dt = df_y2['dy_dt']
         self.dy3_dt = df_y3['dy_dt']
+        self.dy4_dt = df_y4['dy_dt'] ###
         
         if granger: 
             from statsmodels.tsa.stattools import grangercausalitytests
@@ -266,6 +314,26 @@ class threeD_MHL():
                     self.columns_to_keep3.append(i)
                 count += 1 
 
+#####################################################################################
+            gragner_causality = {}
+            for i in df_y4.columns:
+                if i != '1': 
+                    x = df_y4[i]
+                    y = df_y4['y_shift']
+                    data = pd.DataFrame(data = [y,x]).transpose()
+                    x = grangercausalitytests(data, 1, addconst=True, verbose=False)
+                    p_vals = [x[1][0][test][1] for test in tests]
+
+                    gragner_causality[i] = [np.mean(p_vals), np.std(p_vals)]
+
+            df4 = pd.DataFrame.from_dict(gragner_causality).T
+            count = 0 
+            for i in df4.index: 
+                if df4[0][i] < significance and i != 'dy_dt': 
+                    self.columns_to_keep4.append(i)
+                count += 1 
+#####################################################################################
+
             if verbose: 
                 print('\n')
                 print('--------- Pre-processing 1: Dimension 1 ---------')
@@ -273,26 +341,36 @@ class threeD_MHL():
                 print('Columns to keep for y1: ', self.columns_to_keep1)
                 
                 print('\n')
-                print('--------- Pre-processing 2: Dimension 2 ---------')
+                print('--------- Pre-processing 1: Dimension 2 ---------')
                 print(df2,'\n')
                 print('Columns to keep for y2: ', self.columns_to_keep2)
                 
                 print('\n')
-                print('--------- Pre-processing 2: Dimension 3 ---------')
+                print('--------- Pre-processing 1: Dimension 3 ---------')
                 print(df3,'\n')
                 print('Columns to keep for y3: ', self.columns_to_keep3)
-            
+                
+#####################################################################################
+                print('\n')
+                print('--------- Pre-processing 1: Dimension 4 ---------')
+                print(df4,'\n')
+                print('Columns to keep for y4: ', self.columns_to_keep4)
+#####################################################################################
+
         self.dy1_dt = df_y1['dy_dt']
         self.dy2_dt = df_y2['dy_dt']
         self.dy3_dt = df_y3['dy_dt']
+        self.dy4_dt = df_y4['dy_dt'] ###
         
         df_y1.drop([i for i in df_y1.columns if i not in self.columns_to_keep1], axis = 1, inplace = True )
         df_y2.drop([i for i in df_y2.columns if i not in self.columns_to_keep2], axis = 1, inplace = True )
         df_y3.drop([i for i in df_y3.columns if i not in self.columns_to_keep3], axis = 1, inplace = True )
+        df_y4.drop([i for i in df_y4.columns if i not in self.columns_to_keep4], axis = 1, inplace = True ) ###
         
         self.df_y1 = df_y1
         self.df_y2 = df_y2
         self.df_y3 = df_y3
+        self.df_y4 = df_y4 ###
         
         for i in rm_features[0]: 
             if i in self.columns_to_keep1: 
@@ -303,9 +381,14 @@ class threeD_MHL():
                 self.columns_to_keep2.remove(i)
                 
         for i in rm_features[2]: 
-            if i in self.columns_to_keep2: 
-                self.columns_to_keep2.remove(i)
-        
+            if i in self.columns_to_keep3: 
+                self.columns_to_keep3.remove(i)
+
+#####################################################################################        
+        for i in rm_features[3]: 
+            if i in self.columns_to_keep4: 
+                self.columns_to_keep4.remove(i)
+#####################################################################################
         
     '''
     Second pre-processing step which includes Ordinary Least Squares (OLS) for derivative and basis functions 
@@ -316,7 +399,7 @@ class threeD_MHL():
         - significance: (real, lb = 0, ub = 1) significance level for p-values obatined via OLS to determine non-zero coefficients 
         - confidence: (real, lb = 0, ub = 1) confidence level used to derive bounds for the non-zero parameters identified in OLS 
     '''
-    def pre_processing_2(self, intercept = [True, True, True], verbose = True, plot = False, significance = 0.9, confidence = 1-1e-8 ): 
+    def pre_processing_2(self, intercept = [True, True, True, True], verbose = True, plot = False, significance = 0.9, confidence = 1-1e-8 ):  ###
 
         import statsmodels.api as sm
         from statsmodels.sandbox.regression.predstd import wls_prediction_std
@@ -374,7 +457,7 @@ class threeD_MHL():
             print('\n','--------- Pre-processing: FINISHED ---------','\n \n')
             
         if plot: 
-            prstd, iv_l, iv_u = wls_prediction_std(results2)
+            prstd, iv_l, iv_u = wls_prediction_std(results3)
             plt.figure() 
             plt.plot(y_train, color = '#d73027', linewidth = 3)
             gray = [102/255, 102/255, 102/255]
@@ -383,6 +466,27 @@ class threeD_MHL():
             plt.title('OLS $y_3$')
             plt.show()
             
+#####################################################################################
+        X_train = self.df_y4.to_numpy() 
+        y_train = self.dy4_dt.to_numpy()
+        model = sm.OLS(y_train,X_train)
+        results4 = model.fit()
+        if verbose: 
+            print('\n')
+            print('--------- Pre-processing 2: Dimension 4 ---------\n')
+            print(results4.summary())
+            print('\n','--------- Pre-processing: FINISHED ---------','\n \n')
+            
+        if plot: 
+            prstd, iv_l, iv_u = wls_prediction_std(results4)
+            plt.figure() 
+            plt.plot(y_train, color = '#d73027', linewidth = 3)
+            gray = [102/255, 102/255, 102/255]
+            plt.plot(np.dot(X_train, results4.params), color = 'k', linewidth = 3)
+            plt.legend(['Derivative data','Model prediction'])
+            plt.title('OLS $y_4$')
+            plt.show()
+#####################################################################################
             
         initial_parameters = [] 
         bounds = []
@@ -401,7 +505,7 @@ class threeD_MHL():
             if i not in ['dy_dt','y_shift']: 
                 all_features_sym.append(i)
                 if (i in self.columns_to_keep1):
-                    if (results1.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2']: 
+                    if (results1.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2','y3']:  ###
                         initial_parameters.append(results1.params[count])
                         bounds.append((conf_interval1[count][0],conf_interval1[count][1]))
                         non_zero.append(count_vars)
@@ -424,7 +528,7 @@ class threeD_MHL():
             if i not in ['dy_dt','y_shift']: 
                 all_features_sym.append(i)
                 if (i in self.columns_to_keep2):
-                    if (results2.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2']: 
+                    if (results2.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2','y3']:  ###
                         initial_parameters.append(results2.params[count])
                         bounds.append((conf_interval2[count][0],conf_interval2[count][1]))
                         non_zero.append(count_vars)
@@ -445,7 +549,7 @@ class threeD_MHL():
             if i not in ['dy_dt','y_shift']: 
                 all_features_sym.append(i)
                 if (i in self.columns_to_keep3):
-                    if (results3.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2']: 
+                    if (results3.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2','y3']:  ###
                         initial_parameters.append(results3.params[count])
                         bounds.append((conf_interval3[count][0],conf_interval3[count][1]))
                         non_zero.append(count_vars)
@@ -459,6 +563,29 @@ class threeD_MHL():
                     bounds.append((0,0))
 
                 count_vars += 1 
+        
+#####################################################################################
+        conf_interval4 = results4.conf_int(alpha = confidence_interval) 
+        count = 0
+        for i in self.all_features_y4: 
+            if i not in ['dy_dt','y_shift']: 
+                all_features_sym.append(i)
+                if (i in self.columns_to_keep4):
+                    if (results4.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2','y3']:  ###
+                        initial_parameters.append(results4.params[count])
+                        bounds.append((conf_interval4[count][0],conf_interval4[count][1]))
+                        non_zero.append(count_vars)
+                    else: 
+                        initial_parameters.append(0)
+                        bounds.append((0,0))
+                    count += 1
+
+                elif (i not in self.columns_to_keep4): 
+                    initial_parameters.append(0)
+                    bounds.append((0,0))
+
+                count_vars += 1 
+#####################################################################################
         
         self.initial_theta = initial_parameters
         self.theta_bounds = bounds 
@@ -500,7 +627,7 @@ class threeD_MHL():
             if t + horizon_length < self.t[-1]:
                 
                 # Obtaining collocation time scale for current step
-                from utils_3D import time_scale_conversion
+                from utils_4D import time_scale_conversion ###
                 y, t_col = time_scale_conversion(t, 
                                                  horizon_length, 
                                                  optim_options, 
@@ -509,7 +636,7 @@ class threeD_MHL():
 
                 
                 # Performing optimization to compute the next theta
-                from utils_3D import optim_solve
+                from utils_4D import optim_solve ###
                 theta_init, error_sq = optim_solve(y_init, 
                                                    [t, t + horizon_length], 
                                                    theta_init_dict, 
@@ -518,6 +645,7 @@ class threeD_MHL():
                                                    self.basis_0, 
                                                    self.basis_1, 
                                                    self.basis_2,
+                                                   self.basis_3, ###
                                                    self.all_features_sym, 
                                                    iter_num, 
                                                    thresholded_indices, 
@@ -533,7 +661,7 @@ class threeD_MHL():
             
                 
                 # Determining parameters to threshold
-                from utils_3D import thresholding_accuracy_score, thresholding_mean_to_std
+                from utils_4D import thresholding_accuracy_score, thresholding_mean_to_std ###
                 thresholded_indices, CV = thresholding_mean_to_std(len(self.initial_theta), 
                                                                thresholded_indices, 
                                                                theta_updates, 
@@ -566,14 +694,19 @@ class threeD_MHL():
                                      and (i in thresholded_indices and j in self.df_y1.columns)], axis = 1, inplace = True )
                     self.df_y2.drop([j for i,j in enumerate(self.all_features_sym) if (i >= len(self.basis_0['functions']) and i < len(self.basis_0['functions'] + self.basis_1['functions'])) 
                                      and (i in thresholded_indices and j in self.df_y2.columns)], axis = 1, inplace = True )
-                    self.df_y3.drop([j for i,j in enumerate(self.all_features_sym) if (i >= len(self.basis_0['functions'] + self.basis_1['functions'])) 
+                    self.df_y3.drop([j for i,j in enumerate(self.all_features_sym) if (i >= len(self.basis_0['functions'] + self.basis_1['functions']) and i < len(self.basis_0['functions'] + self.basis_1['functions'] + self.basis_2['functions'])) ### 
                                      and (i in thresholded_indices and j in self.df_y3.columns)], axis = 1, inplace = True )
+    ############################################################################################################
+                    self.df_y4.drop([j for i,j in enumerate(self.all_features_sym) if (i >= len(self.basis_0['functions'] + self.basis_1['functions'] + self.basis_2['functions'])) ### 
+                                     and (i in thresholded_indices and j in self.df_y4.columns)], axis = 1, inplace = True )
+    ############################################################################################################
                     
                     
                         
                     self.columns_to_keep1 = self.df_y1.columns
                     self.columns_to_keep2 = self.df_y2.columns
                     self.columns_to_keep3 = self.df_y3.columns
+                    self.columns_to_keep4 = self.df_y4.columns ###
                     
                     # Running pre-processing again (OLS) -- to obatin better bounds for the parameters that remain 
                     self.pre_processing_2(verbose = True, 
@@ -588,7 +721,7 @@ class threeD_MHL():
 
                 # Obtaining the next initial condition
                 if k + 1 < len(self.y):
-                    y_init = [y0_step[k + 1, 0], y0_step[k + 1, 1], y0_step[k + 1, 2]]
+                    y_init = [y0_step[k + 1, 0], y0_step[k + 1, 1], y0_step[k + 1, 2], y0_step[k + 1, 3]] ###
 
                 iter_num += 1
                 
@@ -601,20 +734,21 @@ class threeD_MHL():
         theta_values.loc[theta_values.iloc[:,-1] == 0, :] = 0
         mean_theta = theta_values.iloc[:,-30:-1].mean(axis=1).to_numpy()
         
-        import utils_3D
-        from utils_3D import dyn_sim
+        import utils_4D
+        from utils_4D import dyn_sim
         ys_mhl = dyn_sim(mean_theta, 
                          xs_validate,
                          y_validate,
                          self.basis_0, 
-                         self.basis_1,
-                         self.basis_2)
+                         self.basis_1, 
+                         self.basis_2,
+                         self.basis_3) ###
         
         self.y_simulated = ys_mhl
         
         if metric == 'MSE':
             from sklearn.metrics import mean_squared_error
-            error = mean_squared_error(y_validate[:,0],ys_mhl[:,0])+mean_squared_error(y_validate[:,1],ys_mhl[:,1])+mean_squared_error(y_validate[:,2],ys_mhl[:,2])
+            error = mean_squared_error(y_validate[:,0],ys_mhl[:,0])+mean_squared_error(y_validate[:,1],ys_mhl[:,1])+mean_squared_error(y_validate[:,2],ys_mhl[:,2])+mean_squared_error(y_validate[:,3],ys_mhl[:,3]) ###
             print('\n', 'MSE: %.10f '% error)
             
         self.error = error 
@@ -627,6 +761,8 @@ class threeD_MHL():
             plt.plot(xs_validate, ys_mhl[:, 1], color='black')
             plt.plot(xs_validate, y_validate[:, 2], 'o', color='#fee090')
             plt.plot(xs_validate, ys_mhl[:, 2], color='black')
+            plt.plot(xs_validate, y_validate[:, 2], 'o', color='#4575b4') ###
+            plt.plot(xs_validate, ys_mhl[:, 2], color='black') ###
             plt.show()
                 
         
