@@ -4,14 +4,43 @@
 
 Software requirements and versions tested
 - Python 3.7.13
-- Pyomo 6.1.2
-- numpy 1.19.5 (critical)
-- scipy 1.6.2
-- scikit-learn 0.24.2
-- statsmodels 0.12.2 (critical)
-- matplotlib 3.4.3
-- GAMS (critical)
-    - CONOPT Nonlinear solver (license is required for large instances)
+- [Pyomo](http://www.pyomo.org/) 6.1.2
+- [numpy](https://numpy.org/) 1.19.5
+- [scipy](https://www.scipy.org/) 1.6.2
+- [scikit-learn](https://scikit-learn.org/) 0.24.2
+- [statsmodels](https://www.statsmodels.org/stable/index.html) 0.12.2
+- [matplotlib](https://matplotlib.org/) 3.4.3
+- [cvxopt](https://cvxopt.org/) 1.3.2
+- [GAMS](https://www.gams.com/)
+	- [CONOPT](http://www.conopt.com/) Nonlinear solver (license is required for large instances)
+
+# Installation
+
+1. Clone the repository
+
+Run the following command in the terminal:
+```
+git clone https://github.com/MasahitoUWAMICHI/DySMHO_higherDim.git
+```
+
+2. Install GAMS
+
+Please follow the instructions on the GAMS website to install GAMS on your system.
+
+3. Install the packages
+
+Run the following command in the terminal:
+```
+pip install .
+```
+
+4. Set the path
+
+Run the following command in the terminal:
+```
+python setup.py develop
+```
+
 
 # Reference
 
