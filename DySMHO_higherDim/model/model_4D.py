@@ -7,6 +7,15 @@ import matplotlib.pyplot as plt
 from importlib import reload
 from sklearn import linear_model
 
+from scipy.signal import savgol_filter
+import statsmodels.api as sm
+from statsmodels.tsa.statespace.tools import diff
+from statsmodels.tsa.stattools import grangercausalitytests
+from statsmodels.sandbox.regression.predstd import wls_prediction_std
+import cvxopt
+
+from DySMHI_higherDim.utils_4D import time_scale_conversion, optim_solve, thresholding_accuracy_score, thresholding_mean_to_std, dyn_sim
+
 
 class fourD_MHL(): ###
     
@@ -33,8 +42,6 @@ class fourD_MHL(): ###
         -poly_order: (interger) The order of the polynomial used to fit the samples
     '''   
     def smooth(self, window_size = None , poly_order = 2, verbose = True): 
-        from scipy.signal import savgol_filter
-        from statsmodels.tsa.statespace.tools import diff
         
         if verbose: 
             print('\n')
@@ -257,7 +264,6 @@ class fourD_MHL(): ###
         self.dy4_dt = df_y4['dy_dt'] ###
         
         if granger: 
-            from statsmodels.tsa.stattools import grangercausalitytests
             tests = ['ssr_ftest', 'ssr_chi2test', 'lrtest', 'params_ftest']
 
             gragner_causality = {}
@@ -400,10 +406,6 @@ class fourD_MHL(): ###
         - confidence: (real, lb = 0, ub = 1) confidence level used to derive bounds for the non-zero parameters identified in OLS 
     '''
     def pre_processing_2(self, intercept = [True, True, True, True], verbose = True, plot = False, significance = 0.9, confidence = 1-1e-8 ):  ###
-
-        import statsmodels.api as sm
-        from statsmodels.sandbox.regression.predstd import wls_prediction_std
-        import cvxopt
 
         X_train = self.df_y1.to_numpy() 
         y_train = self.dy1_dt.to_numpy()
@@ -627,7 +629,6 @@ class fourD_MHL(): ###
             if t + horizon_length < self.t[-1]:
                 
                 # Obtaining collocation time scale for current step
-                from utils_4D import time_scale_conversion ###
                 y, t_col = time_scale_conversion(t, 
                                                  horizon_length, 
                                                  optim_options, 
@@ -636,7 +637,6 @@ class fourD_MHL(): ###
 
                 
                 # Performing optimization to compute the next theta
-                from utils_4D import optim_solve ###
                 theta_init, error_sq = optim_solve(y_init, 
                                                    [t, t + horizon_length], 
                                                    theta_init_dict, 
@@ -661,7 +661,6 @@ class fourD_MHL(): ###
             
                 
                 # Determining parameters to threshold
-                from utils_4D import thresholding_accuracy_score, thresholding_mean_to_std ###
                 thresholded_indices, CV = thresholding_mean_to_std(len(self.initial_theta), 
                                                                thresholded_indices, 
                                                                theta_updates, 
@@ -734,8 +733,6 @@ class fourD_MHL(): ###
         theta_values.loc[theta_values.iloc[:,-1] == 0, :] = 0
         mean_theta = theta_values.iloc[:,-30:-1].mean(axis=1).to_numpy()
         
-        import utils_4D
-        from utils_4D import dyn_sim
         ys_mhl = dyn_sim(mean_theta, 
                          xs_validate,
                          y_validate,
