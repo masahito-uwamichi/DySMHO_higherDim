@@ -1,6 +1,17 @@
 # DySMHO_higherDim
 
+# System Requirements
 
+Software requirements and versions tested
+- Python 3.7.13
+- Pyomo 6.1.2
+- numpy 1.19.5 (critical)
+- scipy 1.6.2
+- scikit-learn 0.24.2
+- statsmodels 0.12.2 (critical)
+- matplotlib 3.4.3
+- GAMS (critical)
+    - CONOPT Nonlinear solver (license is required for large instances)
 
 # Reference
 
