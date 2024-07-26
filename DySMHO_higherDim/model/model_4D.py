@@ -167,7 +167,7 @@ class fourD_MHL(): ###
                          granger = True, 
                          significance = 0.1,
                          verbose = True,
-                         rm_features = [[],[],[]]): 
+                         rm_features = [[],[],[],[]]): ### 
         
         # Computing derivatives using finite differences 
         dy_dt1= (self.y[2:,0] - self.y[0:-2,0])/(self.t[2:] - self.t[:-2])
