@@ -14,7 +14,7 @@ from statsmodels.tsa.stattools import grangercausalitytests
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
 import cvxopt
 
-from DySMHO_higherDim.utils_4D import time_scale_conversion, optim_solve, thresholding_accuracy_score, thresholding_mean_to_std, dyn_sim
+from DySMHO_higherDim.model.utils_4D import time_scale_conversion, optim_solve, thresholding_accuracy_score, thresholding_mean_to_std, dyn_sim
 
 
 class fourD_MHL(): ###
