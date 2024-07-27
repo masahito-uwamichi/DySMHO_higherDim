@@ -311,11 +311,11 @@ def dyn_sim(theta, xs, y, basis_0, basis_1, basis_2, basis_3): ###
 ############################################################################################################
             for n in basis_3['names']: 
                 if n[0:3] == 'exp': 
-                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.exp(z)
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.exp(w)
                 elif n[0:3] == 'sin':
-                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.sin(z)
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.sin(w)
                 elif n[0:3] == 'cos':
-                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.cos(z)
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.cos(w)
 ############################################################################################################
 
             if i == 0:
