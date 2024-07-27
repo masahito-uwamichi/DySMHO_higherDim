@@ -286,36 +286,36 @@ def dyn_sim(theta, xs, y, basis_0, basis_1, basis_2, basis_3): ###
             
             for n in basis_0['names']: 
                 if n[0:3] == 'exp': 
-                    basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z: np.exp(x)
+                    basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z,w: np.exp(x) ###
                 elif n[0:3] == 'sin':
-                    basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z: np.sin(x)
+                    basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z,w: np.sin(x) ###
                 elif n[0:3] == 'cos':
-                    basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z: np.cos(x)
+                    basis_0['functions'][basis_0['names'].index(n)] = lambda x,y,z,w: np.cos(x) ###
                 
             for n in basis_1['names']: 
                 if n[0:3] == 'exp': 
-                    basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z: np.exp(y)
+                    basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z,w: np.exp(y) ###
                 elif n[0:3] == 'sin':
-                    basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z: np.sin(y)
+                    basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z,w: np.sin(y) ###
                 elif n[0:3] == 'cos':
-                    basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z: np.cos(y)
+                    basis_1['functions'][basis_1['names'].index(n)] = lambda x,y,z,w: np.cos(y) ###
                     
             for n in basis_2['names']: 
                 if n[0:3] == 'exp': 
-                    basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: np.exp(z)
+                    basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z,w: np.exp(z) ###
                 elif n[0:3] == 'sin':
-                    basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: np.sin(z)
+                    basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z,w: np.sin(z) ###
                 elif n[0:3] == 'cos':
-                    basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z: np.cos(z)
+                    basis_2['functions'][basis_2['names'].index(n)] = lambda x,y,z,w: np.cos(z) ###
 
 ############################################################################################################
             for n in basis_3['names']: 
                 if n[0:3] == 'exp': 
-                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: np.exp(z)
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.exp(w)
                 elif n[0:3] == 'sin':
-                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: np.sin(z)
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.sin(w)
                 elif n[0:3] == 'cos':
-                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z: np.cos(z)
+                    basis_3['functions'][basis_3['names'].index(n)] = lambda x,y,z,w: np.cos(w)
 ############################################################################################################
 
             if i == 0:
