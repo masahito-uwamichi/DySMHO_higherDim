@@ -281,7 +281,7 @@ def dyn_sim(theta, xs, y, basis): ###
 
         return dy_dt_sim
 
-    ys = odeint(dy_dt_sim, [y[0,0], y[0,1], y[0,2], y[0,3]], xs) ###
+    ys = odeint(dy_dt_sim, y[0,:], xs) ###
     
     return ys
 

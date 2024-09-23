@@ -342,9 +342,9 @@ class ND_MHL(): ###
                 if not iter_num % thresholding_frequency and iter_num > 0:
 
                     # Dropping columns in the dataframe containing the evaluated basis functions 
-                    for k in range(self.N):
-                        self.df_y[k].drop([j for i,j in enumerate(self.all_features_sym) if i in thresholded_indices and j in self.df_y[k].columns], axis = 1, inplace = True )
-                        self.columns_to_keep[k] = self.df_y[k].columns                    
+                    for i_dim in range(self.N):
+                        self.df_y[i_dim].drop([j for i,j in enumerate(self.all_features_sym) if i in thresholded_indices and j in self.df_y[i_dim].columns], axis = 1, inplace = True )
+                        self.columns_to_keep[i_dim] = self.df_y[i_dim].columns                    
                     
                     # Running pre-processing again (OLS) -- to obatin better bounds for the parameters that remain 
                     self.pre_processing_2(verbose = True, 
@@ -359,7 +359,7 @@ class ND_MHL(): ###
 
                 # Obtaining the next initial condition
                 if k + 1 < len(self.y):
-                    y_init = [y0_step[k + 1, 0], y0_step[k + 1, 1], y0_step[k + 1, 2], y0_step[k + 1, 3]] ###
+                    y_init = y0_step[k + 1, :] ###
 
                 iter_num += 1
                 
