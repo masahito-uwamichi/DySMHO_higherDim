@@ -152,7 +152,7 @@ def optim_solve(y_init, t_span, initial_theta, theta_bounds, y, basis, all_featu
                 elif n[0:3] == 'cos':
                     basis[k]['functions'][basis[k]['names'].index(n)] = cos_using_variable(k)
 
-        return m.dxdt[i, t] == sum(m.theta[i+len_basis[k]]*fun(*m.x[:,t]) for k, fun in enumerate(basis[i]['functions'])) ###
+        return m.dxdt[i, t] == sum(m.theta[k+len_basis[i-1]]*fun(*m.x[:,t]) for k, fun in enumerate(basis[i-1]['functions'])) ###
             
 
     m.diffeq1 = Constraint(m.n, m.t, rule=_diffeq1)
@@ -277,7 +277,7 @@ def dyn_sim(theta, xs, y, basis): ###
             len_basis = np.array([0]+[len(bas) for bas in basis])
             len_basis = np.cumsum(len_basis)
 
-            dy_dt_sim[i] = sum(theta[i+len_basis[k]]*fun(*y) for k, fun in enumerate(basis[k]['functions'])) ###
+            dy_dt_sim[i] = sum(theta[k+len_basis[i]]*fun(*y) for k, fun in enumerate(basis[i]['functions'])) ###
 
         return dy_dt_sim
 
