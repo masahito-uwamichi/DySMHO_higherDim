@@ -52,7 +52,7 @@ class ND_MHL(): ###
         if window_size == None: 
 
             for i in range(self.N):
-                self.smooth_each_dim_with_window_size(i, poly_order = poly_order, verbose = verbose)
+                self.smooth_each_dim_without_window_size(i, poly_order = poly_order, verbose = verbose)
 
         # Pre-specified window size
         else: 
