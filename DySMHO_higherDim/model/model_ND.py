@@ -232,7 +232,7 @@ class ND_MHL(): ###
         for j in self.all_features[i]: 
             if j not in ['dy_dt','y_shift']: 
                 self.all_features_sym.append(j)
-                if (j in self.columns_to_keep1):
+                if (j in self.columns_to_keep[i]):
                     if (results1.pvalues[count]) < (self.p_val_tolerance or j == '1') or bool(re.match(r'^y\d+$', j)):  ###
                         self.initial_theta.append(results1.params[count])
                         self.theta_bounds.append((conf_interval1[count][0],conf_interval1[count][1]))
@@ -243,7 +243,7 @@ class ND_MHL(): ###
                     count += 1
 
 
-                elif (j not in self.columns_to_keep1): 
+                elif (j not in self.columns_to_keep[i]): 
                     self.initial_theta.append(0)
                     self.theta_bounds.append((0,0))
 
