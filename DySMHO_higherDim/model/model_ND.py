@@ -153,6 +153,7 @@ class ND_MHL(): ###
                     x = df_y[j].dropna()
                     y = df_y['y_shift']
                     data = pd.DataFrame(data = [y,x]).transpose()
+                    print(data)
                     x = grangercausalitytests(data, 1, addconst=True, verbose=False)
                     p_vals = [x[1][0][test][1] for test in tests]
 
