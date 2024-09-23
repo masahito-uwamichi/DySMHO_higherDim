@@ -130,7 +130,7 @@ class ND_MHL(): ###
 
         df_y['dy_dt'] = dydt[:,i]
         df_y.drop(df_y.tail(1).index,inplace=True)
-        df_y['y_shift'] = self.y[1:-1,i]
+        df_y['y_shift'] = self.y[2:-1,i]
 
         self.df_y.append(df_y)
         self.dy_dt.append(dydt[:,i])
