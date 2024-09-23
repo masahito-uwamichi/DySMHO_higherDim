@@ -150,6 +150,7 @@ class ND_MHL(): ###
             granger_causality = {}
             for j in df_y.columns: 
                 if j != 'dy_dt': 
+                    print(j)
                     x = df_y[j].dropna()
                     y = df_y['y_shift']
                     data = pd.DataFrame(data = [y,x]).transpose()
