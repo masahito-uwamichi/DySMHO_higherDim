@@ -14,6 +14,8 @@ from statsmodels.tsa.stattools import grangercausalitytests
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
 import cvxopt
 
+import re
+
 from DySMHO_higherDim.model.utils_ND import time_scale_conversion, optim_solve, thresholding_accuracy_score, thresholding_mean_to_std, dyn_sim
 
 
@@ -186,10 +188,26 @@ class ND_MHL(): ###
         - significance: (real, lb = 0, ub = 1) significance level for p-values obatined via OLS to determine non-zero coefficients 
         - confidence: (real, lb = 0, ub = 1) confidence level used to derive bounds for the non-zero parameters identified in OLS 
     '''
-    def pre_processing_2(self, intercept = [True, True, True, True], verbose = True, plot = False, significance = 0.9, confidence = 1-1e-8 ):  ###
+    def pre_processing_2(self, intercept = None, verbose = True, plot = False, significance = 0.9, confidence = 1-1e-8 ):  ###
 
-        X_train = self.df_y1.to_numpy() 
-        y_train = self.dy1_dt.to_numpy()
+        if intercept == None:
+            intercept = [True] * self.N
+
+        self.initial_theta = [] 
+        self.theta_bounds = []
+        self.non_zero = [] 
+        self.p_val_tolerance = significance
+        self.confidence_interval = 1 - confidence
+        self.all_features_sym = [] 
+
+        for i in range(self.N):
+            self.pre_processing_2_each_dim(i, intercept[i], verbose, plot)
+
+        
+    def pre_processing_2_each_dim(self, i, intercept, verbose, plot): 
+        
+        X_train = self.df_y[i].to_numpy() 
+        y_train = self.dy_dt[i].to_numpy()
         model = sm.OLS(y_train,X_train)
         results1 = model.fit()
         if verbose: 
@@ -206,175 +224,29 @@ class ND_MHL(): ###
             plt.legend(['Derivative data','Model prediction'])
             plt.title('OLS $y_1$')
             plt.show()
-            
-            
-        X_train = self.df_y2.to_numpy() 
-        y_train = self.dy2_dt.to_numpy() 
-        model = sm.OLS(y_train,X_train)
-        results2 = model.fit()
-        if verbose: 
-            print('\n')
-            print('--------- Pre-processing 2: Dimension 2 ---------\n')
-            print(results2.summary())
-            print('\n','--------- Pre-processing: FINISHED ---------','\n \n')
-            
-        if plot: 
-            prstd, iv_l, iv_u = wls_prediction_std(results2)
-            plt.figure() 
-            plt.plot(y_train, color = '#d73027', linewidth = 3)
-            gray = [102/255, 102/255, 102/255]
-            plt.plot(np.dot(X_train, results2.params), color = 'k', linewidth = 3)
-            plt.legend(['Derivative data','Model prediction'])
-            plt.title('OLS $y_2$')
-            plt.show()
-            
-            
-        X_train = self.df_y3.to_numpy() 
-        y_train = self.dy3_dt.to_numpy()
-        model = sm.OLS(y_train,X_train)
-        results3 = model.fit()
-        if verbose: 
-            print('\n')
-            print('--------- Pre-processing 2: Dimension 3 ---------\n')
-            print(results3.summary())
-            print('\n','--------- Pre-processing: FINISHED ---------','\n \n')
-            
-        if plot: 
-            prstd, iv_l, iv_u = wls_prediction_std(results3)
-            plt.figure() 
-            plt.plot(y_train, color = '#d73027', linewidth = 3)
-            gray = [102/255, 102/255, 102/255]
-            plt.plot(np.dot(X_train, results3.params), color = 'k', linewidth = 3)
-            plt.legend(['Derivative data','Model prediction'])
-            plt.title('OLS $y_3$')
-            plt.show()
-            
-#####################################################################################
-        X_train = self.df_y4.to_numpy() 
-        y_train = self.dy4_dt.to_numpy()
-        model = sm.OLS(y_train,X_train)
-        results4 = model.fit()
-        if verbose: 
-            print('\n')
-            print('--------- Pre-processing 2: Dimension 4 ---------\n')
-            print(results4.summary())
-            print('\n','--------- Pre-processing: FINISHED ---------','\n \n')
-            
-        if plot: 
-            prstd, iv_l, iv_u = wls_prediction_std(results4)
-            plt.figure() 
-            plt.plot(y_train, color = '#d73027', linewidth = 3)
-            gray = [102/255, 102/255, 102/255]
-            plt.plot(np.dot(X_train, results4.params), color = 'k', linewidth = 3)
-            plt.legend(['Derivative data','Model prediction'])
-            plt.title('OLS $y_4$')
-            plt.show()
-#####################################################################################
-            
-        initial_parameters = [] 
-        bounds = []
-        non_zero = [] 
-        p_val_tolerance = significance
-        confidence_interval = 1 - confidence
-        all_features_sym = [] 
 
-        # Start with count equal to 1 because first parameter is the constant term 
-        conf_interval1 = results1.conf_int(alpha = confidence_interval) 
+        conf_interval1 = results1.conf_int(alpha = self.confidence_interval) 
         count = 0
-        count_vars = 0 
-    
+        count_vars = i
         
-        for i in self.all_features_y1: 
-            if i not in ['dy_dt','y_shift']: 
-                all_features_sym.append(i)
-                if (i in self.columns_to_keep1):
-                    if (results1.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2','y3']:  ###
-                        initial_parameters.append(results1.params[count])
-                        bounds.append((conf_interval1[count][0],conf_interval1[count][1]))
-                        non_zero.append(count_vars)
+        for j in self.all_features[i]: 
+            if j not in ['dy_dt','y_shift']: 
+                self.all_features_sym.append(j)
+                if (j in self.columns_to_keep1):
+                    if (results1.pvalues[count]) < (self.p_val_tolerance or j == '1') or bool(re.match(r'^y\d+$', j)):  ###
+                        self.initial_theta.append(results1.params[count])
+                        self.theta_bounds.append((conf_interval1[count][0],conf_interval1[count][1]))
+                        self.non_zero.append(count_vars)
                     else: 
-                        initial_parameters.append(0)
-                        bounds.append((0,0))
+                        self.initial_theta.append(0)
+                        self.theta_bounds.append((0,0))
                     count += 1
 
 
-                elif (i not in self.columns_to_keep1): 
-                    initial_parameters.append(0)
-                    bounds.append((0,0))
+                elif (j not in self.columns_to_keep1): 
+                    self.initial_theta.append(0)
+                    self.theta_bounds.append((0,0))
 
-                count_vars += 1 
-
-    
-        conf_interval2 = results2.conf_int(alpha = confidence_interval) 
-        count = 0
-        for i in self.all_features_y2: 
-            if i not in ['dy_dt','y_shift']: 
-                all_features_sym.append(i)
-                if (i in self.columns_to_keep2):
-                    if (results2.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2','y3']:  ###
-                        initial_parameters.append(results2.params[count])
-                        bounds.append((conf_interval2[count][0],conf_interval2[count][1]))
-                        non_zero.append(count_vars)
-                    else: 
-                        initial_parameters.append(0)
-                        bounds.append((0,0))
-                    count += 1
-
-                elif (i not in self.columns_to_keep2): 
-                    initial_parameters.append(0)
-                    bounds.append((0,0))
-
-                count_vars += 1 
-                
-        conf_interval3 = results3.conf_int(alpha = confidence_interval) 
-        count = 0
-        for i in self.all_features_y3: 
-            if i not in ['dy_dt','y_shift']: 
-                all_features_sym.append(i)
-                if (i in self.columns_to_keep3):
-                    if (results3.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2','y3']:  ###
-                        initial_parameters.append(results3.params[count])
-                        bounds.append((conf_interval3[count][0],conf_interval3[count][1]))
-                        non_zero.append(count_vars)
-                    else: 
-                        initial_parameters.append(0)
-                        bounds.append((0,0))
-                    count += 1
-
-                elif (i not in self.columns_to_keep3): 
-                    initial_parameters.append(0)
-                    bounds.append((0,0))
-
-                count_vars += 1 
-        
-#####################################################################################
-        conf_interval4 = results4.conf_int(alpha = confidence_interval) 
-        count = 0
-        for i in self.all_features_y4: 
-            if i not in ['dy_dt','y_shift']: 
-                all_features_sym.append(i)
-                if (i in self.columns_to_keep4):
-                    if (results4.pvalues[count]) < p_val_tolerance or i in ['1','y0','y1','y2','y3']:  ###
-                        initial_parameters.append(results4.params[count])
-                        bounds.append((conf_interval4[count][0],conf_interval4[count][1]))
-                        non_zero.append(count_vars)
-                    else: 
-                        initial_parameters.append(0)
-                        bounds.append((0,0))
-                    count += 1
-
-                elif (i not in self.columns_to_keep4): 
-                    initial_parameters.append(0)
-                    bounds.append((0,0))
-
-                count_vars += 1 
-#####################################################################################
-        
-        self.initial_theta = initial_parameters
-        self.theta_bounds = bounds 
-        self.non_zero = non_zero 
-        self.all_features_sym = all_features_sym
-        
         
     '''
     Performs moving horizon dicovery routine
@@ -423,10 +295,7 @@ class ND_MHL(): ###
                                                    theta_init_dict, 
                                                    self.theta_bounds, 
                                                    y, 
-                                                   self.basis_0, 
-                                                   self.basis_1, 
-                                                   self.basis_2,
-                                                   self.basis_3, ###
+                                                   self.basis, ###
                                                    self.all_features_sym, 
                                                    iter_num, 
                                                    thresholded_indices, 
@@ -466,27 +335,16 @@ class ND_MHL(): ###
                     len_thresholded_indices_prev[0] = len(thresholded_indices) 
                     len_thresholded_indices_prev[1] = 0 
                     
+                len_basis = np.array([0]+[len(bas) for bas in self.basis])
+                len_basis = np.cumsum(len_basis)
+
                 # Recomputing bounds once some of the parameters have been eliminated
                 if not iter_num % thresholding_frequency and iter_num > 0:
-                    
+
                     # Dropping columns in the dataframe containing the evaluated basis functions 
-                    self.df_y1.drop([j for i,j in enumerate(self.all_features_sym) if (i < len(self.basis_0['functions'])) 
-                                     and (i in thresholded_indices and j in self.df_y1.columns)], axis = 1, inplace = True )
-                    self.df_y2.drop([j for i,j in enumerate(self.all_features_sym) if (i >= len(self.basis_0['functions']) and i < len(self.basis_0['functions'] + self.basis_1['functions'])) 
-                                     and (i in thresholded_indices and j in self.df_y2.columns)], axis = 1, inplace = True )
-                    self.df_y3.drop([j for i,j in enumerate(self.all_features_sym) if (i >= len(self.basis_0['functions'] + self.basis_1['functions']) and i < len(self.basis_0['functions'] + self.basis_1['functions'] + self.basis_2['functions'])) ### 
-                                     and (i in thresholded_indices and j in self.df_y3.columns)], axis = 1, inplace = True )
-    ############################################################################################################
-                    self.df_y4.drop([j for i,j in enumerate(self.all_features_sym) if (i >= len(self.basis_0['functions'] + self.basis_1['functions'] + self.basis_2['functions'])) ### 
-                                     and (i in thresholded_indices and j in self.df_y4.columns)], axis = 1, inplace = True )
-    ############################################################################################################
-                    
-                    
-                        
-                    self.columns_to_keep1 = self.df_y1.columns
-                    self.columns_to_keep2 = self.df_y2.columns
-                    self.columns_to_keep3 = self.df_y3.columns
-                    self.columns_to_keep4 = self.df_y4.columns ###
+                    for k in range(self.N):
+                        self.df_y[k].drop([j for i,j in enumerate(self.all_features_sym) if i in thresholded_indices and j in self.df_y[k].columns], axis = 1, inplace = True )
+                        self.columns_to_keep[k] = self.df_y[k].columns                    
                     
                     # Running pre-processing again (OLS) -- to obatin better bounds for the parameters that remain 
                     self.pre_processing_2(verbose = True, 
@@ -517,30 +375,24 @@ class ND_MHL(): ###
         ys_mhl = dyn_sim(mean_theta, 
                          xs_validate,
                          y_validate,
-                         self.basis_0, 
-                         self.basis_1, 
-                         self.basis_2,
-                         self.basis_3) ###
+                         self.basis) ###
         
         self.y_simulated = ys_mhl
         
         if metric == 'MSE':
             from sklearn.metrics import mean_squared_error
-            error = mean_squared_error(y_validate[:,0],ys_mhl[:,0])+mean_squared_error(y_validate[:,1],ys_mhl[:,1])+mean_squared_error(y_validate[:,2],ys_mhl[:,2])+mean_squared_error(y_validate[:,3],ys_mhl[:,3]) ###
+            error = 0
+            for i in range(self.N):
+                error += mean_squared_error(y_validate[:,i],ys_mhl[:,i])
             print('\n', 'MSE: %.10f '% error)
             
         self.error = error 
         
 
         if plot == True:
-            plt.plot(xs_validate, y_validate[:, 0], 'o', color='#d73027')
-            plt.plot(xs_validate, ys_mhl[:, 0], color='black')
-            plt.plot(xs_validate, y_validate[:, 1], 'o', color='#fc8d59')
-            plt.plot(xs_validate, ys_mhl[:, 1], color='black')
-            plt.plot(xs_validate, y_validate[:, 2], 'o', color='#fee090')
-            plt.plot(xs_validate, ys_mhl[:, 2], color='black')
-            plt.plot(xs_validate, y_validate[:, 2], 'o', color='#4575b4') ###
-            plt.plot(xs_validate, ys_mhl[:, 2], color='black') ###
+            for i in range(self.N):
+                plt.plot(xs_validate, y_validate[:, i], 'o')
+                plt.plot(xs_validate, ys_mhl[:, i], color='black')
             plt.show()
                 
         
